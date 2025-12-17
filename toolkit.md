@@ -1017,137 +1017,6 @@ class ErrorBoundary extends React.Component {
 
 ---
 
-## **6. Next Steps & Resources** <a name="next-steps"></a>
-
-### **🚀 Where to Go From Here**
-
-#### **Week 1: Core Concepts Mastery**
-1. **Navigation:** Add tab navigation between screens
-2. **Forms:** Implement form validation
-3. **Async Storage:** Save data locally on device
-4. **API Integration:** Fetch data from a REST API
-
-#### **Week 2: Advanced Features**
-1. **Animations:** Add gesture animations
-2. **Push Notifications:** Implement reminder system
-3. **Camera/Gallery:** Add photo mood logging
-4. **Theming:** Implement dark/light mode
-
-#### **Week 3: Production Ready**
-1. **Testing:** Add unit and integration tests
-2. **Performance:** Optimize bundle size and loading
-3. **Accessibility:** Add screen reader support
-4. **Deployment:** Publish to app stores
-
-### **📚 Recommended Learning Path**
-
-#### **Beginner Resources**
-1. **Official Docs:** [React Native Docs](https://reactnative.dev/docs/getting-started)
-2. **Video Course:** [React Native - The Practical Guide](https://www.udemy.com/course/react-native-the-practical-guide/)
-3. **Interactive:** [React Native Express](http://www.reactnativeexpress.com/)
-
-#### **Intermediate Resources**
-1. **State Management:** [Zustand](https://github.com/pmndrs/zustand) or [Redux Toolkit](https://redux-toolkit.js.org/)
-2. **Navigation:** [React Navigation](https://reactnavigation.org/)
-3. **UI Libraries:** [React Native Paper](https://callstack.github.io/react-native-paper/), [NativeBase](https://nativebase.io/)
-
-#### **Advanced Resources**
-1. **Native Modules:** [Writing Native Modules](https://reactnative.dev/docs/native-modules-intro)
-2. **Performance:** [Performance Monitor](https://reactnative.dev/docs/profiling)
-3. **Security:** [React Native Security](https://github.com/satya164/react-native-security)
-
-### **🛠️ Essential Tools**
-
-#### **Development Tools**
-1. **VS Code Extensions:**
-   - React Native Tools
-   - ES7+ React/Redux/React-Native snippets
-   - Prettier - Code formatter
-
-2. **Debugging Tools:**
-   - React Native Debugger
-   - Flipper
-   - Charles Proxy (for API debugging)
-
-3. **Testing Tools:**
-   - Jest (unit testing)
-   - React Native Testing Library
-   - Detox (E2E testing)
-
-#### **Useful Libraries**
-```json
-{
-  "dependencies": {
-    // Navigation
-    "@react-navigation/native": "^6.0.0",
-    "@react-navigation/bottom-tabs": "^6.0.0",
-    
-    // State Management
-    "zustand": "^4.0.0",
-    
-    // UI
-    "react-native-paper": "^5.0.0",
-    "react-native-vector-icons": "^9.0.0",
-    
-    // Utilities
-    "date-fns": "^2.0.0",
-    "axios": "^1.0.0",
-    
-    // Storage
-    "@react-native-async-storage/async-storage": "^1.0.0",
-    
-    // Forms
-    "react-hook-form": "^7.0.0",
-    "zod": "^3.0.0"
-  }
-}
-```
-
-### **📱 Building Real Projects**
-
-#### **Project Ideas for Practice**
-1. **To-Do List App:** Master state management
-2. **Weather App:** Practice API integration
-3. **Recipe Book:** Learn local storage
-4. **Expense Tracker:** Implement charts and graphs
-5. **Social Media Clone:** Practice complex navigation
-
-#### **Portfolio Projects**
-1. **E-commerce App:** Full-stack with backend
-2. **Fitness Tracker:** Charts, animations, health data
-3. **Travel Planner:** Maps integration, offline support
-4. **Learning Platform:** Video, quizzes, progress tracking
-
-### **💼 Career Pathways**
-
-#### **React Native Developer Skills**
-```yaml
-Junior Level (0-2 years):
-  - Core React Native concepts
-  - Basic UI development
-  - Simple state management
-  - Debugging skills
-
-Mid Level (2-4 years):
-  - Advanced navigation patterns
-  - Performance optimization
-  - Native module integration
-  - Testing strategies
-
-Senior Level (4+ years):
-  - Architecture design
-  - Team leadership
-  - Complex problem solving
-  - Production deployment
-```
-
-#### **Job Market Insights**
-- **Average Salary (US):** $90,000 - $140,000
-- **In-Demand Skills:** TypeScript, GraphQL, Testing, CI/CD
-- **Growth Areas:** FinTech, HealthTech, E-commerce
-
----
-
 ## **7. Project Reflection** <a name="reflection"></a>
 
 ### **🎯 What I Learned**
@@ -1293,10 +1162,10 @@ For someone to run this project in under 5 minutes:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/[username]/react-native-moodflow
+git clone https://github.com/[hafifahussein]/moodflow
 
 # 2. Install dependencies
-cd react-native-moodflow
+cd moodflow
 npm install
 
 # 3. Start the app
