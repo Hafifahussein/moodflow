@@ -19,31 +19,11 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
-        },
-        {
-            "src": "/splash-icon.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "splash"
         }
     ],
     "categories": [
         "health",
         "lifestyle",
         "productivity"
-    ],
-    "shortcuts": [
-        {
-            "name": "Log Today's Mood",
-            "short_name": "Log Mood",
-            "description": "Quickly log your current mood",
-            "url": "/?logMood=true"
-        },
-        {
-            "name": "View Journal",
-            "short_name": "Journal",
-            "description": "Open your journal entries",
-            "url": "/?tab=journal"
-        }
     ]
 }
