@@ -1,4 +1,5 @@
 {
+    "version": 2,
     "builds": [
         {
             "src": "package.json",
@@ -10,52 +11,37 @@
     ],
     "routes": [
         {
-            "src": "/static/(.*)",
+            "src": "/_expo/static/js/web/(.*\\.js)$",
+            "headers": {
+                "Content-Type": "application/javascript",
+                "Cache-Control": "public, max-age=31536000, immutable"
+            },
+            "continue": true
+        },
+        {
+            "src": "/_expo/(.*)",
             "headers": {
                 "Cache-Control": "public, max-age=31536000, immutable"
-            }
+            },
+            "continue": true
         },
         {
             "src": "/assets/(.*)",
             "headers": {
                 "Cache-Control": "public, max-age=31536000, immutable"
-            }
+            },
+            "continue": true
         },
         {
-            "src": "/favicon.ico",
-            "dest": "/favicon.ico"
-        },
-        {
-            "src": "/manifest.json",
-            "dest": "/manifest.json"
+            "src": "/(.*\\.(js|json|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))$",
+            "headers": {
+                "Cache-Control": "public, max-age=31536000, immutable"
+            },
+            "continue": true
         },
         {
             "src": "/(.*)",
-            "dest": "/index.html",
-            "headers": {
-                "Cache-Control": "public, max-age=0, must-revalidate"
-            }
-        }
-    ],
-    "headers": [
-        {
-            "source": "/service-worker.js",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=0, must-revalidate"
-                },
-                {
-                    "key": "Service-Worker-Allowed",
-                    "value": "/"
-                }
-            ]
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/static/(.*)",
-            "destination": "/static/$1"
+            "dest": "/index.html"
         }
     ]
 }
