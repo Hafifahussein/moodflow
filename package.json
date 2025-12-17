@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
+    "build": "expo export --platform web",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
-    "build": "expo export --platform web --output-dir web-build",
-    "predeploy": "expo export --platform web",
-    "debug": "expo export --platform web && echo '=== DIST FOLDER CONTENTS ===' && find dist -type f | head -20"
+    "web": "expo start --web"
   },
   "dependencies": {
     "@miblanchard/react-native-slider": "^2.6.0",
