@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import {
   StyleSheet,
   ScrollView,
@@ -29,6 +29,16 @@ import {
   Snackbar,
   SegmentedButtons,
 } from 'react-native-paper'
+
+// PWA Installation TypeScript types
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[]
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed'
+    platform: string
+  }>
+  prompt(): Promise<void>
+}
 
 // Define TypeScript types
 type MoodType = {
@@ -152,6 +162,110 @@ const DAILY_PROMPTS = [
   'How did you practice self-care today?',
 ]
 
+// PWA Installation Button Component
+const PWAInstallButton = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [showInstallButton, setShowInstallButton] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
+
+  useEffect(() => {
+    // Check if app is already installed
+    const checkDisplayMode = () => {
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true
+      setIsStandalone(isStandalone)
+    }
+
+    checkDisplayMode()
+
+    // Listen for beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      setShowInstallButton(true)
+    }
+
+    // Listen for app installed event
+    const handleAppInstalled = () => {
+      setShowInstallButton(false)
+      setIsStandalone(true)
+      console.log('PWA was installed')
+    }
+
+    // Add event listeners
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    // Check on display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)')
+    const handleDisplayModeChange = (e: MediaQueryListEvent) => {
+      setIsStandalone(e.matches)
+    }
+    mediaQuery.addEventListener('change', handleDisplayModeChange)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+      mediaQuery.removeEventListener('change', handleDisplayModeChange)
+    }
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return
+
+    deferredPrompt.prompt()
+
+    const { outcome } = await deferredPrompt.userChoice
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt')
+      // You can add haptic feedback here if on mobile web
+      if (navigator.vibrate) {
+        navigator.vibrate(100)
+      }
+    } else {
+      console.log('User dismissed the install prompt')
+    }
+
+    setDeferredPrompt(null)
+    setShowInstallButton(false)
+  }
+
+  // Don't show install button if already installed or on native platforms
+  if (isStandalone || Platform.OS !== 'web' || !showInstallButton) return null
+
+  return (
+    <View style={styles.pwaInstallContainer}>
+      <Surface style={styles.pwaInstallBanner} elevation={2}>
+        <View style={styles.pwaInstallContent}>
+          <Text style={styles.pwaInstallIcon}>📱</Text>
+          <View style={styles.pwaInstallText}>
+            <Text style={styles.pwaInstallTitle}>Install MoodFlow App</Text>
+            <Text style={styles.pwaInstallSubtitle}>Get the full app experience</Text>
+          </View>
+          <Button
+            mode="contained"
+            onPress={handleInstallClick}
+            style={styles.pwaInstallButton}
+            compact
+          >
+            Install
+          </Button>
+          <Button
+            mode="text"
+            onPress={() => setShowInstallButton(false)}
+            style={styles.pwaDismissButton}
+            compact
+          >
+            ✕
+          </Button>
+        </View>
+      </Surface>
+    </View>
+  )
+}
+
 // Mood Button Component
 const MoodButton = ({ mood, isSelected, onPress, theme }: any) => {
   const scaleAnim = React.useRef(new Animated.Value(1)).current
@@ -209,16 +323,15 @@ const MoodButton = ({ mood, isSelected, onPress, theme }: any) => {
   )
 }
 
-// Swipeable Log Entry Component (RESTORED FROM ORIGINAL)
+// Swipeable Log Entry Component
 const SwipeableLogEntry = ({ log, onDelete, theme, formatTimestamp }: any) => {
   const translateX = useRef(new Animated.Value(0)).current
-  const deleteThreshold = -100 // Swipe this far to trigger delete
+  const deleteThreshold = -100
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Only activate if swiping horizontally (not vertical scroll)
         return (
           Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy)
         )
@@ -227,17 +340,14 @@ const SwipeableLogEntry = ({ log, onDelete, theme, formatTimestamp }: any) => {
         translateX.setOffset(0)
       },
       onPanResponderMove: (evt, gestureState) => {
-        // Only allow left swipe (negative dx)
         if (gestureState.dx < 0) {
           translateX.setValue(gestureState.dx)
         }
       },
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dx < deleteThreshold) {
-          // Swipe far enough - delete
           handleDelete()
         } else {
-          // Snap back
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
@@ -250,14 +360,12 @@ const SwipeableLogEntry = ({ log, onDelete, theme, formatTimestamp }: any) => {
   ).current
 
   const handleDelete = () => {
-    // Haptic feedback
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Vibration.vibrate(50)
-    } else {
-      Vibration.vibrate(50)
+    } else if (navigator.vibrate) {
+      navigator.vibrate(50)
     }
 
-    // Animate out
     Animated.timing(translateX, {
       toValue: -500,
       duration: 300,
@@ -324,7 +432,7 @@ const SwipeableLogEntry = ({ log, onDelete, theme, formatTimestamp }: any) => {
 
             {log.tags.length > 0 && (
               <View style={styles.tagsContainer}>
-                {log.tags.map((tag) => (
+                {log.tags.map((tag: string) => (
                   <Chip key={tag} mode="outlined" style={styles.tagChip}>
                     #{tag}
                   </Chip>
@@ -342,29 +450,38 @@ const SwipeableLogEntry = ({ log, onDelete, theme, formatTimestamp }: any) => {
 function MainApp() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [activeTab, setActiveTab] = useState<'home' | 'journal'>('home')
-
-  // Mood logging state
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null)
   const [note, setNote] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customTag, setCustomTag] = useState('')
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('afternoon')
   const [logs, setLogs] = useState<LogEntryType[]>([])
-
-  // Journal state
   const [journalEntries, setJournalEntries] = useState<JournalEntryType[]>([])
   const [gratitude, setGratitude] = useState(['', '', ''])
   const [reflection, setReflection] = useState('')
   const [todayPrompt] = useState(DAILY_PROMPTS[Math.floor(Math.random() * DAILY_PROMPTS.length)])
-
-  // Snackbar
   const [snackbarVisible, setSnackbarVisible] = useState(false)
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [deletedLog, setDeletedLog] = useState<LogEntryType | null>(null)
 
   const theme = isDarkMode ? CustomDarkTheme : CustomLightTheme
 
-  // Handle mood logging
+  // PWA: Check if we're online
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
   const handleLogMood = () => {
     if (!selectedMood) {
       showSnackbar('Please select a mood first')
@@ -382,7 +499,20 @@ function MainApp() {
 
     setLogs((prev) => [newLog, ...prev])
 
-    // Reset form
+    // Save to localStorage for PWA offline persistence
+    if (Platform.OS === 'web') {
+      try {
+        const savedLogs = JSON.parse(localStorage.getItem('moodflow_logs') || '[]')
+        savedLogs.unshift({
+          ...newLog,
+          timestamp: newLog.timestamp.toISOString(),
+        })
+        localStorage.setItem('moodflow_logs', JSON.stringify(savedLogs.slice(0, 100))) // Keep last 100
+      } catch (error) {
+        console.error('Failed to save to localStorage:', error)
+      }
+    }
+
     setSelectedMood(null)
     setNote('')
     setSelectedTags([])
@@ -391,7 +521,25 @@ function MainApp() {
     showSnackbar(`${selectedMood.emoji} Mood logged successfully!`)
   }
 
-  // Tag management
+  // Load logs from localStorage on PWA
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      try {
+        const savedLogs = JSON.parse(localStorage.getItem('moodflow_logs') || '[]')
+        if (savedLogs.length > 0) {
+          const parsedLogs = savedLogs.map((log: any) => ({
+            ...log,
+            timestamp: new Date(log.timestamp),
+            mood: MOODS.find((m) => m.id === log.mood?.id) || MOODS[2],
+          }))
+          setLogs(parsedLogs.slice(0, 50))
+        }
+      } catch (error) {
+        console.error('Failed to load from localStorage:', error)
+      }
+    }
+  }, [])
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
   }
@@ -404,25 +552,33 @@ function MainApp() {
     }
   }
 
-  // Delete log with undo functionality
   const deleteLog = (logId: string) => {
     const logToDelete = logs.find((log) => log.id === logId)
     if (logToDelete) {
       setDeletedLog(logToDelete)
       setLogs((prev) => prev.filter((log) => log.id !== logId))
+
+      // Remove from localStorage
+      if (Platform.OS === 'web') {
+        try {
+          const savedLogs = JSON.parse(localStorage.getItem('moodflow_logs') || '[]')
+          const updatedLogs = savedLogs.filter((log: any) => log.id !== logId)
+          localStorage.setItem('moodflow_logs', JSON.stringify(updatedLogs))
+        } catch (error) {
+          console.error('Failed to update localStorage:', error)
+        }
+      }
+
       showSnackbar('Entry deleted')
     }
   }
 
-  // Handle undo
   const handleUndo = () => {
     if (deletedLog) {
       setLogs((prev) => {
-        // Find the correct position to insert back
         const newLogs = [...prev]
         let insertIndex = 0
 
-        // Find where this log should go based on timestamp
         for (let i = 0; i < newLogs.length; i++) {
           if (deletedLog.timestamp > newLogs[i].timestamp) {
             insertIndex = i
@@ -432,6 +588,21 @@ function MainApp() {
         }
 
         newLogs.splice(insertIndex, 0, deletedLog)
+
+        // Save back to localStorage
+        if (Platform.OS === 'web') {
+          try {
+            const savedLogs = JSON.parse(localStorage.getItem('moodflow_logs') || '[]')
+            savedLogs.splice(insertIndex, 0, {
+              ...deletedLog,
+              timestamp: deletedLog.timestamp.toISOString(),
+            })
+            localStorage.setItem('moodflow_logs', JSON.stringify(savedLogs))
+          } catch (error) {
+            console.error('Failed to undo in localStorage:', error)
+          }
+        }
+
         return newLogs
       })
       setDeletedLog(null)
@@ -449,7 +620,6 @@ function MainApp() {
     setDeletedLog(null)
   }
 
-  // Calculate statistics
   const stats = useMemo(() => {
     if (logs.length === 0) {
       return {
@@ -463,7 +633,6 @@ function MainApp() {
     const positiveEntries = logs.filter((log) => log.mood.value >= 4).length
     const positivePercentage = Math.round((positiveEntries / logs.length) * 100)
 
-    // Calculate streak
     let currentStreak = 0
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -493,7 +662,6 @@ function MainApp() {
     }
   }, [logs])
 
-  // Format timestamp
   const formatTimestamp = (date: Date) => {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -523,7 +691,47 @@ function MainApp() {
     return `${dateStr}, ${timeStr}`
   }
 
-  // Render active screen
+  const saveJournalEntry = () => {
+    const entry: JournalEntryType = {
+      id: `journal-${Date.now()}`,
+      date: new Date().toISOString(),
+      prompt: todayPrompt,
+      gratitude: gratitude.filter((g) => g.trim()),
+      reflection: reflection.trim(),
+    }
+
+    setJournalEntries((prev) => [entry, ...prev])
+    setGratitude(['', '', ''])
+    setReflection('')
+
+    // Save to localStorage for PWA
+    if (Platform.OS === 'web') {
+      try {
+        const savedEntries = JSON.parse(localStorage.getItem('moodflow_journal') || '[]')
+        savedEntries.unshift(entry)
+        localStorage.setItem('moodflow_journal', JSON.stringify(savedEntries.slice(0, 50)))
+      } catch (error) {
+        console.error('Failed to save journal:', error)
+      }
+    }
+
+    showSnackbar('📝 Journal entry saved!')
+  }
+
+  // Load journal entries from localStorage
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      try {
+        const savedEntries = JSON.parse(localStorage.getItem('moodflow_journal') || '[]')
+        if (savedEntries.length > 0) {
+          setJournalEntries(savedEntries.slice(0, 20))
+        }
+      } catch (error) {
+        console.error('Failed to load journal:', error)
+      }
+    }
+  }, [])
+
   const renderScreen = () => {
     if (activeTab === 'journal') {
       return (
@@ -623,6 +831,15 @@ function MainApp() {
     // Home screen
     return (
       <ScrollView style={{ backgroundColor: theme.colors.background }}>
+        {/* PWA Offline Indicator */}
+        {Platform.OS === 'web' && !isOnline && (
+          <Surface style={styles.offlineIndicator} elevation={1}>
+            <Text style={styles.offlineText}>
+              🌐 Offline Mode - Your data will sync when back online
+            </Text>
+          </Surface>
+        )}
+
         {/* Statistics Grid */}
         <View style={styles.statsSection}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>📊 Insights</Text>
@@ -873,22 +1090,6 @@ function MainApp() {
     )
   }
 
-  // Save journal entry
-  const saveJournalEntry = () => {
-    const entry: JournalEntryType = {
-      id: `journal-${Date.now()}`,
-      date: new Date().toISOString(),
-      prompt: todayPrompt,
-      gratitude: gratitude.filter((g) => g.trim()),
-      reflection: reflection.trim(),
-    }
-
-    setJournalEntries((prev) => [entry, ...prev])
-    setGratitude(['', '', ''])
-    setReflection('')
-    showSnackbar('📝 Journal entry saved!')
-  }
-
   return (
     <PaperProvider theme={theme}>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
@@ -896,6 +1097,9 @@ function MainApp() {
           backgroundColor={theme.colors.background}
           barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         />
+
+        {/* PWA Install Banner */}
+        <PWAInstallButton />
 
         {/* Header */}
         <Surface style={[styles.header, { backgroundColor: theme.colors.surface }]}>
@@ -992,10 +1196,68 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  // PWA Install Banner Styles
+  pwaInstallContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  pwaInstallBanner: {
+    backgroundColor: '#0891b2',
+    padding: 12,
+    borderRadius: 0,
+  },
+  pwaInstallContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pwaInstallIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  pwaInstallText: {
+    flex: 1,
+  },
+  pwaInstallTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pwaInstallSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+  },
+  pwaInstallButton: {
+    backgroundColor: '#ffffff',
+    marginLeft: 12,
+  },
+  pwaDismissButton: {
+    minWidth: 40,
+    marginLeft: 8,
+  },
+  // Offline Indicator
+  offlineIndicator: {
+    backgroundColor: '#f59e0b',
+    padding: 8,
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 8,
+  },
+  offlineText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Original styles continue...
   header: {
     elevation: 4,
     paddingVertical: 16,
     paddingHorizontal: 20,
+    marginTop: Platform.OS === 'web' ? 48 : 0, // Space for PWA banner
   },
   headerContent: {
     flexDirection: 'row',
